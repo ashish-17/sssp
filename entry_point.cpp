@@ -22,15 +22,6 @@ enum SmemMode smemMethod;
 
 void testCorrectness(std::vector<initial_vertex> * parsedGraph, char* outputFileName);
 
-// Open files safely.
-template <typename T_file>
-void openFileToAccess( T_file& input_file, std::string file_name ) {
-	input_file.open( file_name.c_str() );
-	if( !input_file )
-		throw std::runtime_error( "Failed to open specified file: " + file_name + "\n" );
-}
-
-
 // Execution entry point.
 int main( int argc, char** argv )
 {
@@ -159,7 +150,8 @@ int main( int argc, char** argv )
 		/********************************
 		 * It's done here.
 		 ********************************/
-
+		
+		parse_graph::writeOutput(parsedGraph, outputFileName);
 		testCorrectness(&parsedGraph, outputFileName);
 		CUDAErrorCheck( cudaDeviceReset() );
 		std::cout << "Done.\n";

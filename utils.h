@@ -1,7 +1,13 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define INFINITY UINT_MAX
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+
+#define SSSP_INF 1073741824
+#define INFINITY SSSP_INF
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,4 +17,12 @@ double getTime();
 #ifdef __cplusplus
 }
 #endif
+
+// Open files safely.
+template <typename T_file>
+void openFileToAccess( T_file& input_file, std::string file_name ) {
+	input_file.open( file_name.c_str() );
+	if( !input_file )
+		throw std::runtime_error( "Failed to open specified file: " + file_name + "\n" );
+}
 #endif	//	SIMPLETIMER_H

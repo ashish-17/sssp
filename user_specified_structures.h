@@ -24,6 +24,10 @@ struct Edge{
 
 };
 
-
+typedef struct GraphEdge {
+  unsigned int weight;
+  unsigned int src;
+  unsigned int dest;
+} GraphEdge_t;
 
 #endif	//	USER_SPECIFIED_STRUCTURES_H

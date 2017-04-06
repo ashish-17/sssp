@@ -1,0 +1,6 @@
+0: 0
+1: INF
+2: INF
+3: INF
+4: INF
+5: INF

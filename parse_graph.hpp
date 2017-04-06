@@ -11,6 +11,10 @@ namespace parse_graph {
 		std::vector<initial_vertex>& initGraph,
 		const long long arbparam,
 		const bool nondirected );
+
+	void covertToGraphEdgeFormat(std::vector<initial_vertex>& graph, std::vector<GraphEdge_t>& edges);
+	void updateDistances(std::vector<initial_vertex>& graph, int*d);
+	void writeOutput(std::vector<initial_vertex> &graph, char* outputFileName);
 }
 
 #endif	//	PARSE_GRAPH_HPP

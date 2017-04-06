@@ -5,8 +5,7 @@
 #include <iostream>
 
 #include "parse_graph.hpp"
-
-#define SSSP_INF 1073741824
+#include "utils.h"
 
 uint parse_graph::parse(
 		std::ifstream& inFile,
@@ -49,7 +48,7 @@ uint parse_graph::parse(
 		if( initGraph.size() <= theMax )
 			initGraph.resize(theMax+1);
 		{ //This is just a block
-		        // Add the neighbor. A neighbor wraps edges
+			// Add the neighbor. A neighbor wraps edges
 			neighbor nbrToAdd;
 			nbrToAdd.srcIndex = srcVertexIndex;
 
@@ -67,12 +66,12 @@ uint parse_graph::parse(
 			nEdges++;
 		}
 		if( nondirected ) {
-		        // Add the edge going the other way
+			// Add the edge going the other way
 			uint tmp = srcVertexIndex;
 			srcVertexIndex = dstVertexIndex;
 			dstVertexIndex = tmp;
 			//swap src and dest and add as before
-			
+
 			neighbor nbrToAdd;
 			nbrToAdd.srcIndex = srcVertexIndex;
 
@@ -92,4 +91,47 @@ uint parse_graph::parse(
 
 	return nEdges;
 
+}
+
+
+void parse_graph::covertToGraphEdgeFormat(std::vector<initial_vertex>& graph, std::vector<GraphEdge_t>& edges) {
+
+	int vertex_count = graph.size();
+	for (int i = 0; i < vertex_count; ++i) {
+		std::vector<neighbor> nbrs = graph[i].nbrs;
+		for (int j = 0; j < nbrs.size(); ++j) {
+			GraphEdge_t edge;
+			edge.src = nbrs[j].srcIndex;
+			edge.dest = i;
+			edge.weight = nbrs[j].edgeValue.weight;
+			edges.push_back(edge);
+		}
+	}
+
+}
+
+void parse_graph::updateDistances(std::vector<initial_vertex>& graph, int*d) {
+
+	int vertex_count = graph.size();
+	for (int i = 0; i < vertex_count; ++i) {
+		graph.at(i).vertexValue.distance = d[i];
+	}
+}
+
+
+void parse_graph::writeOutput(std::vector<initial_vertex> &graph, char* outputFileName) {
+	std::cout << std::endl << "WRITTING O/P" << std::endl;
+	std::ofstream outputFile;
+	openFileToAccess< std::ofstream >(outputFile, std::string(outputFileName));
+	int vertex_count = graph.size();
+	char buffer[1024];
+	for (int i = 0; i < vertex_count; ++i) {
+		unsigned int d = graph.at(i).vertexValue.distance;
+		memset(buffer, 0, 1024);
+		sprintf(buffer, "%d: %s\n", i, (d == INFINITY) ? "INF": std::to_string(d).c_str());
+		outputFile<<buffer;
+	}
+	
+
+	outputFile.close();	
 }
