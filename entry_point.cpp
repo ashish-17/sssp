@@ -20,6 +20,8 @@ enum SyncMode syncMethod;
 enum SmemMode {UseSmem, UseNoSmem};
 enum SmemMode smemMethod;
 
+void testCorrectness(std::vector<initial_vertex> * parsedGraph, char* outputFileName);
+
 // Open files safely.
 template <typename T_file>
 void openFileToAccess( T_file& input_file, std::string file_name ) {
@@ -35,18 +37,19 @@ int main( int argc, char** argv )
 
 	std::string usage =
 		"\tRequired command line arguments:\n\
-			Input file: E.g., --input in.txt\n\
-                        Block size: E.g., --bsize 512\n\
-                        Block count: E.g., --bcount 192\n\
-                        Output path: E.g., --output output.txt\n\
-			Processing method: E.g., --method bmf (bellman-ford), or tpe (to-process-edge), or opt (one further optimizations)\n\
-			Shared memory usage: E.g., --usesmem yes, or no \n\
-			Sync method: E.g., --sync incore, or outcore\n";
+		Input file: E.g., --input in.txt\n\
+		Block size: E.g., --bsize 512\n\
+		Block count: E.g., --bcount 192\n\
+		Output path: E.g., --output output.txt\n\
+		Processing method: E.g., --method bmf (bellman-ford), or tpe (to-process-edge), or opt (one further optimizations)\n\
+		Shared memory usage: E.g., --usesmem yes, or no \n\
+		Sync method: E.g., --sync incore, or outcore\n";
 
 	try {
 
 		std::ifstream inputFile;
 		std::ofstream outputFile;
+		char outputFileName[256]; 
 		int selectedDevice = 0;
 		int bsize = 0, bcount = 0;
 		int vwsize = 32;
@@ -64,41 +67,43 @@ int main( int argc, char** argv )
 		for( int iii = 1; iii < argc; ++iii )
 			if ( !strcmp(argv[iii], "--method") && iii != argc-1 ) {
 				if ( !strcmp(argv[iii+1], "bmf") )
-				        processingMethod = ProcessingType::Push;
+					processingMethod = ProcessingType::Push;
 				else if ( !strcmp(argv[iii+1], "tpe") )
-    				        processingMethod = ProcessingType::Neighbor;
+					processingMethod = ProcessingType::Neighbor;
 				else if ( !strcmp(argv[iii+1], "opt") )
-				    processingMethod = ProcessingType::Own;
+					processingMethod = ProcessingType::Own;
 				else{
-           std::cerr << "\n Un-recognized method parameter value \n\n";
-           exit;
-         }   
+					std::cerr << "\n Un-recognized method parameter value \n\n";
+					exit;
+				}   
 			}
 			else if ( !strcmp(argv[iii], "--sync") && iii != argc-1 ) {
 				if ( !strcmp(argv[iii+1], "incore") )
-				        syncMethod = InCore;
+					syncMethod = InCore;
 				if ( !strcmp(argv[iii+1], "outcore") )
-    				        syncMethod = OutOfCore;
+					syncMethod = OutOfCore;
 				else{
-           std::cerr << "\n Un-recognized sync parameter value \n\n";
-           exit;
-         }  
+					std::cerr << "\n Un-recognized sync parameter value \n\n";
+					exit;
+				}  
 
 			}
 			else if ( !strcmp(argv[iii], "--usesmem") && iii != argc-1 ) {
 				if ( !strcmp(argv[iii+1], "yes") )
-				        smemMethod = UseSmem;
+					smemMethod = UseSmem;
 				if ( !strcmp(argv[iii+1], "no") )
-    				        smemMethod = UseNoSmem;
-        else{
-           std::cerr << "\n Un-recognized usesmem parameter value \n\n";
-           exit;
-         }  
+					smemMethod = UseNoSmem;
+				else{
+					std::cerr << "\n Un-recognized usesmem parameter value \n\n";
+					exit;
+				}  
 			}
 			else if( !strcmp( argv[iii], "--input" ) && iii != argc-1 /*is not the last one*/)
 				openFileToAccess< std::ifstream >( inputFile, std::string( argv[iii+1] ) );
-			else if( !strcmp( argv[iii], "--output" ) && iii != argc-1 /*is not the last one*/)
+			else if( !strcmp( argv[iii], "--output" ) && iii != argc-1 /*is not the last one*/) {
 				openFileToAccess< std::ofstream >( outputFile, std::string( argv[iii+1] ) );
+				strcpy(outputFileName, argv[iii+1]);
+			}
 			else if( !strcmp( argv[iii], "--bsize" ) && iii != argc-1 /*is not the last one*/)
 				bsize = std::atoi( argv[iii+1] );
 			else if( !strcmp( argv[iii], "--bcount" ) && iii != argc-1 /*is not the last one*/)
@@ -106,15 +111,17 @@ int main( int argc, char** argv )
 
 		if(bsize <= 0 || bcount <= 0){
 			std::cerr << "Usage: " << usage;
-      exit;
+			exit;
 			throw std::runtime_error("\nAn initialization error happened.\nExiting.");
 		}
 		if( !inputFile.is_open() || processingMethod == ProcessingType::Unknown ) {
 			std::cerr << "Usage: " << usage;
 			throw std::runtime_error( "\nAn initialization error happened.\nExiting." );
 		}
-		if( !outputFile.is_open() )
+		if( !outputFile.is_open() ) {
 			openFileToAccess< std::ofstream >( outputFile, "out.txt" );
+			strcpy(outputFileName, "out.txt");
+		}
 		CUDAErrorCheck( cudaSetDevice( selectedDevice ) );
 		std::cout << "Device with ID " << selectedDevice << " is selected to process the graph.\n";
 
@@ -139,20 +146,21 @@ int main( int argc, char** argv )
 
 
 		switch(processingMethod){
-		case ProcessingType::Push:
-		    puller(&parsedGraph, bsize, bcount);
-		    break;
-		case ProcessingType::Neighbor:
-		    neighborHandler(&parsedGraph, bsize, bcount);
-		    break;
-		default:
-		    own(&parsedGraph, bsize, bcount);
+			case ProcessingType::Push:
+				puller(&parsedGraph, bsize, bcount);
+				break;
+			case ProcessingType::Neighbor:
+				neighborHandler(&parsedGraph, bsize, bcount);
+				break;
+			default:
+				own(&parsedGraph, bsize, bcount);
 		}
 
 		/********************************
 		 * It's done here.
 		 ********************************/
 
+		testCorrectness(&parsedGraph, outputFileName);
 		CUDAErrorCheck( cudaDeviceReset() );
 		std::cout << "Done.\n";
 		return( EXIT_SUCCESS );
@@ -167,4 +175,63 @@ int main( int argc, char** argv )
 		return( EXIT_FAILURE );
 	}
 
+}
+
+
+
+void testCorrectness(std::vector<initial_vertex> * parsedGraph, char* outputFileName) {
+	std::cout << std::endl << "TESTING CORRECTNESS" << std::endl;
+
+	std::cout << "RUNNING SEQUENTIAL BMF..." << std::endl;
+	unsigned int vertex_size = (*parsedGraph).size();
+	unsigned int *d= new unsigned int[vertex_size];
+	for (unsigned int i = 0; i < vertex_size; ++i)
+		d[i] = INFINITY;
+	d[0]=0;
+
+	int change = 0;
+	for (unsigned int k = 1; k < vertex_size; k++){
+		for (unsigned int i = 0; i < vertex_size; i++){
+			std::vector<neighbor> nbrs = (*parsedGraph)[i].nbrs;
+			for (unsigned int j = 0; j < nbrs.size(); ++j){
+				unsigned int u = nbrs[j].srcIndex;
+				unsigned int v = i;
+				unsigned int w = nbrs[j].edgeValue.weight;
+
+				if ((d[u] + w) < d[v]){
+					d[v] = d[u]+w;
+					change = 1;
+				}
+			}
+		}
+		if (change == 0)
+			break;
+		change = 0;
+	}
+
+	//Compare the distance array and the parallel output file
+	std::ifstream outputFile;
+	openFileToAccess< std::ifstream >( outputFile, std::string( outputFileName ) );
+
+	std::string line;
+	unsigned int i = 0;
+	unsigned int incorrect = 0;
+	while (getline(outputFile,line)) {
+		std::string curr = (d[i] < INFINITY) ? (std::to_string(i) + ": " + std::to_string(d[i])):(std::to_string(i) +": " + "INF");
+
+		// std::cout << std::to_string(line.compare(curr)) << std::endl;
+
+		if(line.compare(curr) != 0) {
+			incorrect++;
+			std::cout << "Correct: " << curr << "\tYours: " << line << std::endl;
+		}
+		i++;
+	}
+	if(i != vertex_size) {
+		std::cout << "Insufficient vertices found in outputfile" << std::endl;
+		std::cout << "Expected: " << vertex_size << "Found: " << i << std::endl;
+		return;
+	}
+	std::cout << "Correct: " << std::to_string(vertex_size-incorrect) << "\t Incorrect: " << std::to_string(incorrect) << " \t Total: " << std::to_string(vertex_size) << std::endl;
+	outputFile.close();
 }

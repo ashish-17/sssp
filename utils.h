@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define INFINITY UINT_MAX
+
 #ifdef __cplusplus
 extern "C" {
 #endif
