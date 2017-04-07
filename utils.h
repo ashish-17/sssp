@@ -14,6 +14,7 @@ extern "C" {
 #endif
 void setTime();
 double getTime();
+void mergeSortSeq(void* data, int item_size, int n, int (*comparator)(void*, void*));
 #ifdef __cplusplus
 }
 #endif

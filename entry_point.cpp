@@ -19,6 +19,28 @@ enum SyncMode {InCore, OutOfCore};
 enum SyncMode syncMethod;
 enum SmemMode {UseSmem, UseNoSmem};
 enum SmemMode smemMethod;
+enum EdgeSortOrder {SortBySrc, SortByDest};
+enum EdgeSortOrder sortOrder;
+
+static inline int graphEdgeComparatorSrc(void* e1, void*e2) {
+	GraphEdge_t *e11 = (GraphEdge_t*)e1;
+	GraphEdge_t *e22 = (GraphEdge_t*)e2;
+	if (e11->src != e22->src) { 
+		return e11->src - e22->src;
+	} else {
+		return e11->dest - e22->dest;
+	}
+}
+
+static inline int graphEdgeComparatorDest(void* e1, void*e2) {
+	GraphEdge_t *e11 = (GraphEdge_t*)e1;
+	GraphEdge_t *e22 = (GraphEdge_t*)e2;
+	if (e11->dest != e22->dest) { 
+		return e11->dest - e22->dest;
+	} else {
+		return e11->src - e22->src;
+	}
+}
 
 void testCorrectness(std::vector<initial_vertex> * parsedGraph, char* outputFileName);
 
@@ -34,7 +56,8 @@ int main( int argc, char** argv )
 		Output path: E.g., --output output.txt\n\
 		Processing method: E.g., --method bmf (bellman-ford), or tpe (to-process-edge), or opt (one further optimizations)\n\
 		Shared memory usage: E.g., --usesmem yes, or no \n\
-		Sync method: E.g., --sync incore, or outcore\n";
+		Sync method: E.g., --sync incore, or outcore\n\
+		Sort Order: E.g., --sort src, or dest\n";
 
 	try {
 
@@ -49,6 +72,7 @@ int main( int argc, char** argv )
 		bool nonDirectedGraph = false;		// By default, the graph is directed.
 		ProcessingType processingMethod = ProcessingType::Unknown;
 		syncMethod = OutOfCore;
+		sortOrder = SortBySrc;
 
 
 		/********************************
@@ -71,13 +95,21 @@ int main( int argc, char** argv )
 			else if ( !strcmp(argv[iii], "--sync") && iii != argc-1 ) {
 				if ( !strcmp(argv[iii+1], "incore") )
 					syncMethod = InCore;
-				if ( !strcmp(argv[iii+1], "outcore") )
+				else if ( !strcmp(argv[iii+1], "outcore") )
 					syncMethod = OutOfCore;
-				else{
+				else {
 					std::cerr << "\n Un-recognized sync parameter value \n\n";
 					exit;
 				}  
 
+			}
+			else if ( !strcmp(argv[iii], "--sort") && iii != argc-1 ) {
+				if ( !strcmp(argv[iii+1], "dest") ) {
+					sortOrder = SortByDest;
+				}
+				else {
+					sortOrder = SortBySrc;
+				}
 			}
 			else if ( !strcmp(argv[iii], "--usesmem") && iii != argc-1 ) {
 				if ( !strcmp(argv[iii+1], "yes") )
@@ -134,8 +166,22 @@ int main( int argc, char** argv )
 		/********************************
 		 * Process the graph.
 		 ********************************/
-
-
+		unsigned int vertex_size = parsedGraph.size();
+		unsigned int *distance = new unsigned int[vertex_size];
+		GraphEdge_t *edges = new GraphEdge_t[nEdges];
+		for (unsigned int i = 0; i < vertex_size; ++i)
+			distance[i] = INFINITY;
+		distance[0]=0;
+		
+		parse_graph::covertToGraphEdgeFormat(parsedGraph, edges);
+		if (sortOrder == SortBySrc) {
+			mergeSortSeq(edges, sizeof(GraphEdge_t), nEdges, graphEdgeComparatorSrc);	
+		} else {
+			mergeSortSeq(edges, sizeof(GraphEdge_t), nEdges, graphEdgeComparatorDest);	
+		}
+		
+		//for (int x = 0; x < nEdges; ++x) {std::cout<<"\nEdge - "<<x<<" "<<edges[x].src<<" - "<<edges[x].dest<<" - "<<edges[x].weight<<"\n";}
+ 
 		switch(processingMethod){
 			case ProcessingType::Push:
 				puller(&parsedGraph, bsize, bcount);
@@ -155,6 +201,9 @@ int main( int argc, char** argv )
 		testCorrectness(&parsedGraph, outputFileName);
 		CUDAErrorCheck( cudaDeviceReset() );
 		std::cout << "Done.\n";
+
+		delete[] distance;
+		delete[] edges;
 		return( EXIT_SUCCESS );
 
 	}
@@ -189,6 +238,8 @@ void testCorrectness(std::vector<initial_vertex> * parsedGraph, char* outputFile
 				unsigned int u = nbrs[j].srcIndex;
 				unsigned int v = i;
 				unsigned int w = nbrs[j].edgeValue.weight;
+				if (d[u] == INFINITY)
+					continue;
 
 				if ((d[u] + w) < d[v]){
 					d[v] = d[u]+w;
@@ -226,4 +277,5 @@ void testCorrectness(std::vector<initial_vertex> * parsedGraph, char* outputFile
 	}
 	std::cout << "Correct: " << std::to_string(vertex_size-incorrect) << "\t Incorrect: " << std::to_string(incorrect) << " \t Total: " << std::to_string(vertex_size) << std::endl;
 	outputFile.close();
+	delete[] d;
 }

@@ -15,6 +15,7 @@ __global__ void pulling_kernel(std::vector<initial_vertex> * peeps, int offset, 
 void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
     setTime();
 
+
     /*
      * Do all the things here!
      **/

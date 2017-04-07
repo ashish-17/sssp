@@ -94,17 +94,18 @@ uint parse_graph::parse(
 }
 
 
-void parse_graph::covertToGraphEdgeFormat(std::vector<initial_vertex>& graph, std::vector<GraphEdge_t>& edges) {
+void parse_graph::covertToGraphEdgeFormat(std::vector<initial_vertex>& graph, GraphEdge_t* edges) {
 
 	int vertex_count = graph.size();
+	int e = 0;
 	for (int i = 0; i < vertex_count; ++i) {
 		std::vector<neighbor> nbrs = graph[i].nbrs;
 		for (int j = 0; j < nbrs.size(); ++j) {
 			GraphEdge_t edge;
-			edge.src = nbrs[j].srcIndex;
-			edge.dest = i;
-			edge.weight = nbrs[j].edgeValue.weight;
-			edges.push_back(edge);
+			edges[e].src = nbrs[j].srcIndex;
+			edges[e].dest = i;
+			edges[e].weight = nbrs[j].edgeValue.weight;
+			e++;
 		}
 	}
 
