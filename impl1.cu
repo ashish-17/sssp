@@ -12,7 +12,7 @@ __global__ void pulling_kernel(std::vector<initial_vertex> * peeps, int offset, 
     //offset will tell you who I am.
 }
 
-void puller(std::vector<initial_vertex> * peeps, int blockSize, int blockNum){
+void puller(GraphEdge_t* edges, uint nEdges, uint* distance, int bsize, int bcount, int isIncore) {
     setTime();
 
 

@@ -184,7 +184,7 @@ int main( int argc, char** argv )
  
 		switch(processingMethod){
 			case ProcessingType::Push:
-				puller(&parsedGraph, bsize, bcount);
+				puller(edges, nEdges, distance, bsize, bcount, syncMethod == InCore);
 				break;
 			case ProcessingType::Neighbor:
 				neighborHandler(&parsedGraph, bsize, bcount);
