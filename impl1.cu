@@ -20,22 +20,85 @@ __global__ void pulling_kernel(GraphEdge_t* edges, uint nEdges, uint* d_curr, ui
 	uint src = 0;
 	uint dest = 0;
 	uint weight = 0;
-
+	uint tmp = 0;
 	GraphEdge_t *edge;
 	for (int i = beg + lane; i<= end && i< nEdges; i += 32) {
 		edge = edges + i;
 		src = edge->src;
 		dest = edge->dest;
-		weight = edges->weight;
+		weight = edge->weight;
 	
-		if (d_prev[src] + weight < d_prev[dest]) {
-			atomicMin(&d_curr[dest], d_prev[src] + weight);
+		tmp = d_prev[src] + weight;
+		if (tmp < d_prev[dest]) {
+			atomicMin(&d_curr[dest], tmp);
 			*is_changed = 1;
 		}
 	} 
 }
 
-void puller(GraphEdge_t* edges, uint nEdges, uint nVertices, uint* distance, int bsize, int bcount, int isIncore) {
+__device__ uint min_dist(uint val1, uint val2) {
+	if (val1 < val2) {
+		return val1;
+	} else {
+		return val2;
+	}
+}
+
+__global__ void pulling_kernel_smem(GraphEdge_t* edges, uint nEdges, uint* d_curr, uint* d_prev, int* is_changed) {
+	
+	__shared__ uint shared_mem[2048];
+
+	int threadId = blockDim.x * blockIdx.x + threadIdx.x;
+	int threadCount = blockDim.x * gridDim.x;
+	int lane = threadId & (32 - 1);
+	int countWarps = threadCount % 32 ? threadCount / 32 + 1 : threadCount / 32;
+	int nEdgesPerWarp = nEdges % countWarps == 0 ? nEdges / countWarps : nEdges / countWarps + 1;
+	int warpId = threadId / 32;
+	int beg = nEdgesPerWarp*warpId;
+	int end = beg + nEdgesPerWarp - 1;
+	
+	uint src = 0;
+	uint dest = 0;
+	uint weight = 0;
+	uint tmp = 0;
+	GraphEdge_t *edge;
+	for (int i = beg + lane; i<= end && i< nEdges; i += 32) {
+		edge = edges + i;
+		src = edge->src;
+		dest = edge->dest;
+		weight = edge->weight;
+	
+		shared_mem[threadIdx.x] = min_dist(d_prev[src] + weight, d_prev[dest]);
+
+		__syncthreads();
+		
+		if ((lane >= 1) && (edges[i].dest == edges[i-1].dest)) {
+			shared_mem[threadIdx.x] = min_dist(shared_mem[threadIdx.x], shared_mem[threadIdx.x-1]);
+		}
+		if (lane >= 2 && edges[i].dest == edges[i-2].dest) {
+			shared_mem[threadIdx.x] = min_dist(shared_mem[threadIdx.x], shared_mem[threadIdx.x-2]);
+		}
+		if (lane >= 4 && edges[i].dest == edges[i-4].dest) {
+			shared_mem[threadIdx.x] = min_dist(shared_mem[threadIdx.x], shared_mem[threadIdx.x-4]);
+		}
+		if (lane >= 8 && edges[i].dest == edges[i-8].dest) {
+			shared_mem[threadIdx.x] = min_dist(shared_mem[threadIdx.x], shared_mem[threadIdx.x-8]);
+		}
+		if (lane >= 16 && edges[i].dest == edges[i-16].dest) {
+			shared_mem[threadIdx.x] = min_dist(shared_mem[threadIdx.x], shared_mem[threadIdx.x-16]);
+		}
+		
+		__syncthreads();
+
+		if ((beg == end) || ((i < nEdges - 1) && (i < end) && edges[i].dest != edges[i+1].dest) || (i % 32 == 31 || i == nEdges - 1 || i == end)) {
+			tmp = atomicMin(&d_curr[dest], shared_mem[threadIdx.x]);
+			if (tmp == shared_mem[threadIdx.x])
+				*is_changed = 1;
+		}
+	}
+}
+
+void puller(GraphEdge_t* edges, uint nEdges, uint nVertices, uint* distance, int bsize, int bcount, int isIncore, int useSharedMem) {
 	GraphEdge_t *d_edges;
 	uint* d_distances_curr;
 	uint* d_distances_prev;
@@ -52,27 +115,26 @@ void puller(GraphEdge_t* edges, uint nEdges, uint nVertices, uint* distance, int
 	cudaMemcpy(d_distances_curr, distance, sizeof(uint)*nVertices, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_distances_prev, distance, sizeof(uint)*nVertices, cudaMemcpyHostToDevice);
 
-
 	setTime();
 
 	for (int i = 0; i < nVertices-1; ++i) {
 		cudaMemset(d_is_changed, 0, sizeof(int));
 		
-		if (isIncore == 0)
+		if (isIncore == 1)
+			pulling_kernel<<<bcount, bsize>>>(d_edges, nEdges, d_distances_curr, d_distances_curr, d_is_changed);
+		else if (useSharedMem == 0)
 			pulling_kernel<<<bcount, bsize>>>(d_edges, nEdges, d_distances_curr, d_distances_prev, d_is_changed);
 		else
-			pulling_kernel<<<bcount, bsize>>>(d_edges, nEdges, d_distances_curr, d_distances_curr, d_is_changed);
+			pulling_kernel_smem<<<bcount, bsize>>>(d_edges, nEdges, d_distances_curr, d_distances_prev, d_is_changed);
 
 		cudaDeviceSynchronize();
-			
 		if (isIncore == 0)
 			cudaMemcpy(d_distances_prev, d_distances_curr, sizeof(uint)*nVertices, cudaMemcpyDeviceToDevice);
 
 		count_iterations++;
 
 		cudaMemcpy(&h_is_changed, d_is_changed, sizeof(int), cudaMemcpyDeviceToHost);
-		
-		if (h_is_changed == 0) {
+		if (h_is_changed == 0 || count_iterations == 20) {
 			break;
 		}
 

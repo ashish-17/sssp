@@ -182,7 +182,7 @@ int main( int argc, char** argv )
  
 		switch(processingMethod){
 			case ProcessingType::Push:
-				puller(edges, nEdges, vertex_size, distance, bsize, bcount, syncMethod == InCore);
+				puller(edges, nEdges, vertex_size, distance, bsize, bcount, syncMethod == InCore, smemMethod == UseSmem);
 				break;
 			case ProcessingType::Neighbor:
 				neighborHandler(&parsedGraph, bsize, bcount);
