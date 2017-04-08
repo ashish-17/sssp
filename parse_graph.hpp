@@ -13,7 +13,7 @@ namespace parse_graph {
 		const bool nondirected );
 
 	void covertToGraphEdgeFormat(std::vector<initial_vertex>& graph, GraphEdge_t* edges);
-	void updateDistances(std::vector<initial_vertex>& graph, int*d);
+	void updateDistances(std::vector<initial_vertex>& graph, uint*d);
 	void writeOutput(std::vector<initial_vertex> &graph, char* outputFileName);
 }
 

@@ -111,7 +111,7 @@ void parse_graph::covertToGraphEdgeFormat(std::vector<initial_vertex>& graph, Gr
 
 }
 
-void parse_graph::updateDistances(std::vector<initial_vertex>& graph, int*d) {
+void parse_graph::updateDistances(std::vector<initial_vertex>& graph, uint*d) {
 
 	int vertex_count = graph.size();
 	for (int i = 0; i < vertex_count; ++i) {
@@ -129,7 +129,7 @@ void parse_graph::writeOutput(std::vector<initial_vertex> &graph, char* outputFi
 	for (int i = 0; i < vertex_count; ++i) {
 		unsigned int d = graph.at(i).vertexValue.distance;
 		memset(buffer, 0, 1024);
-		sprintf(buffer, "%d: %s\n", i, (d == INFINITY) ? "INF": std::to_string(d).c_str());
+		sprintf(buffer, "%d: %s\n", i, (d == D_INFINITY) ? "INF": std::to_string(d).c_str());
 		outputFile<<buffer;
 	}
 	

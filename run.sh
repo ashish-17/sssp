@@ -1,2 +1,2 @@
-./sssp --input test_graphs/sample_graph.txt --bsize 512 --bcount 4 --output output.txt --method bmf --usemem no --sync incore --sort src
+./sssp --input test_graphs/amazon0312.txt --bsize 1024 --bcount 2 --output output.txt --method bmf --usemem no --sync incore --sort src
 

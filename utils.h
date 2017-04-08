@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 #define SSSP_INF 1073741824
-#define INFINITY SSSP_INF
+#define D_INFINITY SSSP_INF
 
 #ifdef __cplusplus
 extern "C" {
