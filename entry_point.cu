@@ -110,10 +110,12 @@ int main( int argc, char** argv )
 				}
 			}
 			else if ( !strcmp(argv[iii], "--usesmem") && iii != argc-1 ) {
-				if ( !strcmp(argv[iii+1], "yes") )
+				if ( !strcmp(argv[iii+1], "yes") ) {
 					smemMethod = UseSmem;
-				if ( !strcmp(argv[iii+1], "no") )
+				}
+				else if ( !strcmp(argv[iii+1], "no") ) {
 					smemMethod = UseNoSmem;
+				}
 				else{
 					std::cerr << "\n Un-recognized usesmem parameter value \n\n";
 					return 0;
@@ -197,7 +199,7 @@ int main( int argc, char** argv )
 		
 		parse_graph::updateDistances(parsedGraph, distance);
 		parse_graph::writeOutput(parsedGraph, outputFileName);
-		//testCorrectness(&parsedGraph, outputFileName);
+		testCorrectness(&parsedGraph, outputFileName);
 		CUDAErrorCheck( cudaDeviceReset() );
 		std::cout << "Done.\n";
 

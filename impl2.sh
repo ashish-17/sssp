@@ -25,10 +25,10 @@ do
 ./sssp --input test_graphs/"${file_name}".txt --bsize 768 --bcount 2 --output output.txt --method tpe --usemem no --sync outcore --sort src > results_impl2/"${file_name}"_768_2_outcore_src.stat
 ./sssp --input test_graphs/"${file_name}".txt --bsize 1024 --bcount 2 --output output.txt --method tpe --usemem no --sync outcore --sort src > results_impl2/"${file_name}"_1024_2_outcore_src.stat
 
-./sssp --input test_graphs/"${file_name}".txt --bsize 256 --bcount 8 --output output.txt --method tpe --usemem no --sync outcore --sort dest >  results_impl12"${file_name}"_256_8_outcore_dest.stat
-./sssp --input test_graphs/"${file_name}".txt --bsize 384 --bcount 5 --output output.txt --method tpe --usemem no --sync outcore --sort dest >  results_impl12"${file_name}"_384_5_outcore_dest.stat
-./sssp --input test_graphs/"${file_name}".txt --bsize 512 --bcount 4 --output output.txt --method tpe --usemem no --sync outcore --sort dest > results_impl12"${file_name}"_512_4_outcore_dest.stat
-./sssp --input test_graphs/"${file_name}".txt --bsize 768 --bcount 2 --output output.txt --method tpe --usemem no --sync outcore --sort dest > results_impl12"${file_name}"_768_2_outcore_dest.stat
-./sssp --input test_graphs/"${file_name}".txt --bsize 1024 --bcount 2 --output output.txt --method tpe --usemem no --sync outcore --sort dest > results_impl12"${file_name}"_1024_2_outcore_dest.stat
+./sssp --input test_graphs/"${file_name}".txt --bsize 256 --bcount 8 --output output.txt --method tpe --usemem no --sync outcore --sort dest >  results_impl2/"${file_name}"_256_8_outcore_dest.stat
+./sssp --input test_graphs/"${file_name}".txt --bsize 384 --bcount 5 --output output.txt --method tpe --usemem no --sync outcore --sort dest >  results_impl2/"${file_name}"_384_5_outcore_dest.stat
+./sssp --input test_graphs/"${file_name}".txt --bsize 512 --bcount 4 --output output.txt --method tpe --usemem no --sync outcore --sort dest > results_impl2/"${file_name}"_512_4_outcore_dest.stat
+./sssp --input test_graphs/"${file_name}".txt --bsize 768 --bcount 2 --output output.txt --method tpe --usemem no --sync outcore --sort dest > results_impl2/"${file_name}"_768_2_outcore_dest.stat
+./sssp --input test_graphs/"${file_name}".txt --bsize 1024 --bcount 2 --output output.txt --method tpe --usemem no --sync outcore --sort dest > results_impl2/"${file_name}"_1024_2_outcore_dest.stat
 
 done
