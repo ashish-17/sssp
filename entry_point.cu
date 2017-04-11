@@ -185,7 +185,7 @@ int main( int argc, char** argv )
 				puller(edges, nEdges, vertex_size, distance, bsize, bcount, syncMethod == InCore, smemMethod == UseSmem);
 				break;
 			case ProcessingType::Neighbor:
-				neighborHandler(&parsedGraph, bsize, bcount);
+				neighbourHandler(edges, nEdges, vertex_size, distance, bsize, bcount, syncMethod == InCore);
 				break;
 			default:
 				own(&parsedGraph, bsize, bcount);
