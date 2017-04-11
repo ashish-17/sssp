@@ -164,10 +164,13 @@ void neighbourHandler(GraphEdge_t* edges, uint nEdges, uint nVertices, uint* dis
 	}
 
 	cudaMemcpy(d_edge_idx, h_edge_idx, sizeof(uint)*nEdges, cudaMemcpyHostToDevice);
-
-	setTime();
+	
+	double filter_time = 0.0;
+	double processing_time = 0.0;
 
 	for (int i = 0; i < nVertices-1; ++i) {
+		setTime();
+	
 		cudaMemset(d_is_changed, 0, sizeof(int));
 		cudaMemset(d_change, 0, sizeof(uint)*nVertices);
 		cudaMemset(d_warp_count, 0, sizeof(uint)*count_warps);
@@ -186,9 +189,14 @@ void neighbourHandler(GraphEdge_t* edges, uint nEdges, uint nVertices, uint* dis
 		count_iterations++;
 
 		cudaMemcpy(&h_is_changed, d_is_changed, sizeof(int), cudaMemcpyDeviceToHost);
+		
+		processing_time += getTime();
+		
 		if (h_is_changed == 0) {
 			break;
 		}
+
+		setTime();
 
 		warp_count_kernel<<<bcount, bsize>>>(d_edges, d_warp_count, nEdges, d_change);
 		
@@ -204,9 +212,10 @@ void neighbourHandler(GraphEdge_t* edges, uint nEdges, uint nVertices, uint* dis
 		
 		cudaMemcpy(&count_to_process, d_nEdges, sizeof(uint), cudaMemcpyDeviceToHost);
 		cudaMemcpy(h_edge_idx, d_edge_idx, sizeof(uint)*nEdges, cudaMemcpyDeviceToHost);
+		filter_time += getTime();
 	}
 
-	std::cout << "Took "<<count_iterations << " iterations " << getTime() << "ms.\n";
+	std::cout << "Took "<<count_iterations << " iterations " << processing_time + filter_time << "ms.(filter - "<<filter_time<<"ms processing - "<<processing_time<<"ms)\n";
 
 	cudaMemcpy(distance, d_distances_curr, sizeof(uint)*nVertices, cudaMemcpyDeviceToHost);
 
