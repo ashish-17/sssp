@@ -1,0 +1,11 @@
+Run make to build the executable
+then run ./run.sh
+You can modify the arguments in run.sh to trigger various implementations
+Or
+you can run ./impl1.sh or ./impl2.sh
+to run pre-defined tests on all the input graphs in directory ./test_graphs
+
+In the submitted version I have commented the correctness checking code as it takes a lot of time if run on all input files.
+
+Report - 
+https://docs.google.com/a/scarletmail.rutgers.edu/document/d/1dtMIBwxBjhJJEkJs5SQg5B7MYC0vox4Tr6mCyYO75Lg/edit?usp=sharing
