@@ -199,7 +199,7 @@ int main( int argc, char** argv )
 		
 		parse_graph::updateDistances(parsedGraph, distance);
 		parse_graph::writeOutput(parsedGraph, outputFileName);
-		testCorrectness(&parsedGraph, outputFileName);
+		//testCorrectness(&parsedGraph, outputFileName);
 		CUDAErrorCheck( cudaDeviceReset() );
 		std::cout << "Done.\n";
 
